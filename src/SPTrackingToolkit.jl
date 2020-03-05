@@ -96,7 +96,8 @@ module SPTrackingToolkit
         end
         tracks
     end
-    function closegaps(config::SPT,frames,tracks)
+
+    function buildcost_closegaps(config::SPT,frames,tracks)
         startseg=findall(x->x[2]==MISSINGFRAME,tracks)
         endseg=findall(x->x[end]==MISSINGFRAME,tracks)
 
@@ -142,7 +143,14 @@ module SPTrackingToolkit
         for i in 1:m  ## no GAP filling block
             C[i,i+n]=maxG*1.05
         end
-
+        return C
+    end
+    function closegaps(config::SPT,frames,tracks)
+        startseg=findall(x->x[2]==MISSINGFRAME,tracks)
+        endseg=findall(x->x[end]==MISSINGFRAME,tracks)
+        n=length(startseg)
+        m=length(endseg)
+        C= buildcost_closegaps(config::SPT,frames,tracks)
         S=solve_lap(C)
         newlinks=[Tuple([endseg[r[1]],startseg[r[2]]]) for r in eachrow([1:(n+m) S[1]]) if all(r.<=(m,n))]
         linktr=Vector{Int}[]
