@@ -2,7 +2,7 @@ module SPTrackingToolkit
     using DefaultArrays
     using SolveLAP
     using LinearAlgebra
-    export linkframes
+    export track
     export SPT
 
     const ENDMARK=-1
@@ -181,11 +181,34 @@ module SPTrackingToolkit
         end
         linktr
     end
+    function get_tracked(specs::SPT,frames,links)
+        allP=Array{Float64,2}[]
+        for l in links
+            t=l[1]
+            idx=1
+            n_particleinfo=length(specs.X)+length(specs.I)
+            P=zeros(n_particleinfo+1,sum(x>0 for x in l)-1)
+            for i in 2:length(l)
+                f=l[i]
+                if f>0
+                    P[:,idx].=[t;frames[t][:,f]]
+                    idx+=1
+                end
+                t+=1
 
-    function linkframes(config::SPT,frames)
+            end
+            push!(allP,P)
+        end
+        sort!(allP,by=x->-size(x,2))
+        allP
+    end
+    function buildlinks(config::SPT,frames)
         l=length(frames)
         seg=[segments(config,frames[fa],frames[fb]) for (fa,fb) in zip(1:(l-1),2:l)]
         closegaps(config,frames,buildtracksegments(config,seg))
     end
-
+    function track(config::SPT,frames)
+        links=buildlinks(config,frames)
+        get_tracked(config,frames,links)
+    end
 end # module
