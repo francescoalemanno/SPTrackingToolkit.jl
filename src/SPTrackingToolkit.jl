@@ -31,7 +31,8 @@ module SPTrackingToolkit
 
         for i in 1:pa, j in 1:pb
             cost=norm(Ma[config.X,i] .- Mb[config.X,j])
-            cost <= config.maxdist && (C[i,j] = cost)
+            cost <= config.maxdist || continue
+            C[i,j] = cost
             mincost=min(cost,mincost)
             maxcost=max(cost,maxcost)
         end
@@ -124,7 +125,8 @@ module SPTrackingToolkit
                 pend=frames[Tend][config.X,tracks[ti][frameendidx]]
                 pstart=frames[Tstart][config.X,tracks[tj][framestartidx]]
                 cost=norm(pend.-pstart)/sqrt(Δt)
-                cost <= config.maxdist && (C[i,j] = cost)
+                cost <= config.maxdist || continue
+                C[i,j] = cost
                 maxG=max(maxG,C[i,j])
                 minG=min(minG,C[i,j])
             end
