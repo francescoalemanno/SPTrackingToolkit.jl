@@ -147,7 +147,9 @@ module SPTrackingToolkit
         end
         return C
     end
-    function closegaps(config::SPT,frames,tracks)
+    function closegaps(config::SPT,frames,origtracks)
+        tracks=origtracks
+        @label restartclosing
         startseg=findall(x->x[2]==MISSINGFRAME,tracks)
         endseg=findall(x->x[end]==MISSINGFRAME,tracks)
         n=length(startseg)
@@ -170,6 +172,7 @@ module SPTrackingToolkit
                 push!(linktr,newtrack)
             end
         else
+            println("GAP closing terminated")
             return tracks
         end
         trackskip=Set(foldl(vcat,[a,b] for (a,b) in newlinks))
@@ -179,7 +182,9 @@ module SPTrackingToolkit
             end
             push!(linktr,tracks[i])
         end
-        linktr
+        tracks = linktr
+        println("GAP closing is being restarted: closed ",length(newlinks), " gaps")
+        @goto restartclosing
     end
     function get_tracked(specs::SPT,frames,links)
         allP=Array{Float64,2}[]
