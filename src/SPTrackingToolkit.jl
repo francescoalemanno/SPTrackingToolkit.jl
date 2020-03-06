@@ -156,7 +156,7 @@ module SPTrackingToolkit
         m=length(endseg)
         C= buildcost_closegaps(config::SPT,frames,tracks)
         S=solve_lap(C)
-        newlinks=[Tuple([endseg[r[1]],startseg[r[2]]]) for r in eachrow([1:(n+m) S[1]]) if all(r.<=(m,n))]
+        newlinks=[(endseg[r[1]],startseg[r[2]]) for r in eachrow([1:(n+m) S[1]]) if all(r.<=(m,n))]
         linktr=Vector{Int}[]
         if length(newlinks)>0
             for l in newlinks
@@ -175,14 +175,14 @@ module SPTrackingToolkit
             println("GAP closing terminated")
             return tracks
         end
-        trackskip=Set(foldl(vcat,[a,b] for (a,b) in newlinks))
+        trackskip = Set(reinterpret(Int,newlinks))
         for i in 1:length(tracks)
             if i ∈ trackskip
                 continue;
             end
             push!(linktr,tracks[i])
         end
-        tracks = linktr
+        tracks = deepcopy(linktr)
         println("GAP closing is being restarted: closed ",length(newlinks), " gaps")
         @goto restartclosing
     end
