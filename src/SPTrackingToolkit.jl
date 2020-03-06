@@ -11,16 +11,15 @@ module SPTrackingToolkit
     const COMPLETEMARK=0
     const MISSINGFRAME=-1
 
-    struct SPT
+    Base.@kwdef struct SPT
         maxtimegap::Int
         maxdist::Float64
         dims::Int
-        X::UnitRange{Int}
-        I::UnitRange{Int}
-        SPT(timegap,maxdist,ndims,rest) = new(timegap,maxdist,ndims,1:ndims,(ndims+1):(ndims+rest))
-        SPT(timegap,maxdist,ndims) = SPT(timegap,maxdist,ndims,0)
+        rest::Int=0
+        X::UnitRange{Int}=1:dims
+        I::UnitRange{Int}=(dims+1):(dims+rest)
+        verbose::Bool=false
     end
-
 
     function segments(config::SPT,Ma,Mb)
         pa=size(Ma,2)
@@ -188,7 +187,7 @@ module SPTrackingToolkit
             push!(linktr,tracks[i])
         end
         tracks = linktr
-        println("GAP closing is being restarted: closed ",length(newlinks), " gaps")
+        println("GAP closing is being restarted: closed ",div(length(forbidden),2), " gaps")
         @goto restartclosing
     end
     function get_tracked(specs::SPT,frames,links)
