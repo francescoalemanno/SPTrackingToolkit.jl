@@ -156,6 +156,7 @@ module SPTrackingToolkit
         C= buildcost_closegaps(config::SPT,frames,tracks)
         S=solve_lap(C)
         newlinks=[(endseg[r[1]],startseg[r[2]]) for r in eachrow([1:(n+m) S[1]]) if all(r.<=(m,n))]
+        config.verbose && println("Started GAP closing: ", length(newlinks)," gaps identified")
         linktr=Vector{Int}[]
         forbidden=Set{Int}()
         if length(newlinks)>0
@@ -177,7 +178,7 @@ module SPTrackingToolkit
                 push!(forbidden,tj)
             end
         else
-            println("GAP closing terminated")
+            config.verbose && println("GAP closing terminated")
             return tracks
         end
         for i in 1:length(tracks)
@@ -187,7 +188,7 @@ module SPTrackingToolkit
             push!(linktr,tracks[i])
         end
         tracks = linktr
-        println("GAP closing is being restarted: closed ",div(length(forbidden),2), " gaps")
+        config.verbose && println("GAP closing is being restarted: closed ",div(length(forbidden),2), " gaps")
         @goto restartclosing
     end
     function get_tracked(specs::SPT,frames,links)
