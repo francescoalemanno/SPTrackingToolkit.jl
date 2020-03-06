@@ -158,9 +158,13 @@ module SPTrackingToolkit
         S=solve_lap(C)
         newlinks=[(endseg[r[1]],startseg[r[2]]) for r in eachrow([1:(n+m) S[1]]) if all(r.<=(m,n))]
         linktr=Vector{Int}[]
+        forbidden=Set{Int}()
         if length(newlinks)>0
             for l in newlinks
                 ti,tj=l
+                if ti in forbidden || tj in forbidden
+                    continue
+                end
                 frameendidx = findlast(x->x != MISSINGFRAME,tracks[ti][2:end])+1
                 framestartidx = findfirst(x->x != MISSINGFRAME,tracks[tj][2:end])+1
                 Tend = frameendidx-2+tracks[ti][1]
@@ -170,19 +174,20 @@ module SPTrackingToolkit
                 B=tracks[tj][framestartidx:end]
                 newtrack=[A;fill(MISSINGFRAME,Δt);B]
                 push!(linktr,newtrack)
+                push!(forbidden,ti)
+                push!(forbidden,tj)
             end
         else
             println("GAP closing terminated")
             return tracks
         end
-        trackskip = Set(reinterpret(Int,newlinks))
         for i in 1:length(tracks)
-            if i ∈ trackskip
+            if i in forbidden
                 continue;
             end
             push!(linktr,tracks[i])
         end
-        tracks = deepcopy(linktr)
+        tracks = linktr
         println("GAP closing is being restarted: closed ",length(newlinks), " gaps")
         @goto restartclosing
     end
