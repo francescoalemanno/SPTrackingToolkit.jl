@@ -123,7 +123,7 @@ module SPTrackingToolkit
             if 0< Δt <= config.maxtimegap
                 pend=frames[Tend][config.X,tracks[ti][frameendidx]]
                 pstart=frames[Tstart][config.X,tracks[tj][framestartidx]]
-                cost=norm(pend.-pstart)/sqrt(Δt)
+                cost=norm(pend.-pstart)/sqrt(Δt+1)
                 cost <= config.maxdist || continue
                 C[i,j] = cost
                 maxG=max(maxG,C[i,j])
@@ -131,7 +131,7 @@ module SPTrackingToolkit
             end
         end
 
-        for i in 1:m, j in 1:n  ## no GAP filling block
+        for i in 1:m, j in 1:n  ## auxiliary block
             if isinf(C[i,j])
                continue
             end
