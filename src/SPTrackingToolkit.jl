@@ -26,7 +26,7 @@ module SPTrackingToolkit
         pb=size(Mb,2)
         C=DefaultArray(Inf,pa,pb)
 
-        for i in 1:pa, j in 1:pb
+        @inbounds for i in 1:pa, j in 1:pb
             cost=norm(Ma[config.X,i] .- Mb[config.X,j])
             cost <= config.maxdist || continue
             C[i,j] = cost
@@ -35,7 +35,7 @@ module SPTrackingToolkit
         S=solve_stiff_lap(C,1.05)
         solution=zeros(Int,length(S),3)
 
-        for i in eachindex(S)
+        @inbounds for i in eachindex(S)
             ia, ib = S[i]
             solution[i,1]=ia
             solution[i,2]=ib
@@ -52,12 +52,12 @@ module SPTrackingToolkit
     end
     function buildtracksegments(config::SPT,seg)
         tracks=Vector{Int}[]
-        for x in eachrow(seg[1])
+        @inbounds for x in eachrow(seg[1])
             x[end]==FAKEMARK && continue
             push!(tracks,[1;x[1:2]])
         end
-        for t in 2:length(seg)
-            for x in eachrow(seg[t])
+        @inbounds for t in 2:length(seg)
+            @inbounds for x in eachrow(seg[t])
                 x[end]==FAKEMARK && continue
                 x[end]==STARTMARK && begin push!(tracks,[t;x[1:2]]); continue; end
 
@@ -80,7 +80,7 @@ module SPTrackingToolkit
         n=length(startseg)
         m=length(endseg)
         C=DefaultArray(Inf,m,n)
-        for i in 1:m, j in 1:n  ## GAP filling block
+        @inbounds for i in 1:m, j in 1:n  ## GAP filling block
             ti=endseg[i]
             tj=startseg[j]
 
@@ -117,7 +117,7 @@ module SPTrackingToolkit
         linktr=Vector{Int}[]
         forbidden=Set{Int}()
         if length(newlinks)>0
-            for l in newlinks
+            @inbounds for l in newlinks
                 ti,tj=l
                 if ti in forbidden || tj in forbidden
                     continue
@@ -150,7 +150,7 @@ module SPTrackingToolkit
     end
     function get_tracked(specs::SPT,frames,links)
         allP=Array{Float64,2}[]
-        for l in links
+        @inbounds for l in links
             t=l[1]
             idx=1
             n_particleinfo=length(specs.X)+length(specs.I)
