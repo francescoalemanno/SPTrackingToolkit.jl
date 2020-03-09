@@ -1,7 +1,7 @@
 name = "SPTrackingToolkit"
 uuid = "1297dbda-9bae-4ecc-8fb8-0a9bb98fc8e9"
 authors = ["Francesco Alemanno <francescoalemanno710@gmail.com>"]
-version = "0.1.0"
+version = "0.2.0"
 
 [deps]
 DefaultArrays = "bb1859e0-6c46-48fc-af17-5b269a75ae2f"
