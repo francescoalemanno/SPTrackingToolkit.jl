@@ -1,6 +1,6 @@
 module SPTrackingToolkit
     using DefaultArrays
-    using SolveLAP
+    using SolveLAP: solve_lap, StiffWrapper
     using LinearAlgebra
     export track
     export SPT
@@ -24,31 +24,14 @@ module SPTrackingToolkit
     function segments(config::SPT,Ma,Mb)
         pa=size(Ma,2)
         pb=size(Mb,2)
-        C=DefaultArray(Inf,pa+pb,pa+pb)
-        mincost=Inf
-        maxcost=0.0
+        tC=DefaultArray(Inf,pa,pb)
 
         for i in 1:pa, j in 1:pb
             cost=norm(Ma[config.X,i] .- Mb[config.X,j])
             cost <= config.maxdist || continue
-            C[i,j] = cost
-            mincost=min(cost,mincost)
-            maxcost=max(cost,maxcost)
+            tC[i,j] = cost
         end
-
-        for i in (pa+1):(pa+pb), j in (pb+1):(pa+pb)
-            iT=j-pb
-            jT=i-pa
-            if C[iT,jT] != C.default
-                C[i,j]=mincost
-            end
-        end
-        for i in (pb+1):(pa+pb)
-            C[i-pb,i]=maxcost*1.05
-        end
-        for i in (pa+1):(pa+pb)
-            C[i,i-pa]=maxcost*1.05
-        end
+        C=StiffWrapper(tC,1.05)
         solution=[1:(pa+pb) solve_lap(C)[1] zeros(Int,pa+pb)]
         for i in 1:(pa+pb)
             ia,ib,_=solution[i,:]
@@ -106,7 +89,6 @@ module SPTrackingToolkit
         C=DefaultArray(Inf,m+n,m+n)
         maxG=0.0
         minG=Inf
-
         for i in 1:m, j in 1:n  ## GAP filling block
             ti=endseg[i]
             tj=startseg[j]
