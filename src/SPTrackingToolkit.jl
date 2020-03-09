@@ -1,6 +1,6 @@
 module SPTrackingToolkit
     using DefaultArrays
-    using SolveLAP: solve_lap, StiffWrapper
+    using SolveLAP
     using LinearAlgebra
     export track
     export SPT
@@ -24,34 +24,27 @@ module SPTrackingToolkit
     function segments(config::SPT,Ma,Mb)
         pa=size(Ma,2)
         pb=size(Mb,2)
-        tC=DefaultArray(Inf,pa,pb)
+        C=DefaultArray(Inf,pa,pb)
 
         for i in 1:pa, j in 1:pb
             cost=norm(Ma[config.X,i] .- Mb[config.X,j])
             cost <= config.maxdist || continue
-            tC[i,j] = cost
+            C[i,j] = cost
         end
-        C=StiffWrapper(tC,1.05)
-        solution=[1:(pa+pb) solve_lap(C)[1] zeros(Int,pa+pb)]
-        for i in 1:(pa+pb)
-            ia,ib,_=solution[i,:]
-            if ia<=pa && ib<=pb
-                solution[i,3]=COMPLETEMARK
-            end
-            if ia<=pa && ib>pb
-                solution[i,3]=ENDMARK
-                solution[i,2]=MISSINGFRAME
-            end
-            if ia>pa && ib<=pb
-                solution[i,3]=STARTMARK
-                solution[i,1]=MISSINGFRAME
-            end
-            if ia>pa && ib>pb
-                solution[i,3]=FAKEMARK
-                solution[i,2]=FAKEMARK
-                solution[i,1]=FAKEMARK
-            end
+
+        S=solve_stiff_lap(C,1.05)
+        solution=zeros(Int,length(S),3)
+
+        for i in eachindex(S)
+            ia, ib = S[i]
+            solution[i,1]=ia
+            solution[i,2]=ib
+            solution[i,3]=COMPLETEMARK
+            ia<0 && (solution[i,3]=STARTMARK)
+            ib<0 && (solution[i,3]=ENDMARK)
+            (ia<0 && ib<0) && (solution[i,3]=FAKEMARK)
         end
+
         solution
     end
     @inline function tC(v::Vector)
@@ -108,7 +101,7 @@ module SPTrackingToolkit
                 C[i,j] = cost
             end
         end
-        return StiffWrapper(C,1.05)
+        return C
     end
     function closegaps(config::SPT,frames,origtracks)
         tracks=origtracks
@@ -118,8 +111,8 @@ module SPTrackingToolkit
         n=length(startseg)
         m=length(endseg)
         C=buildcost_closegaps(config::SPT,frames,tracks)
-        S=solve_lap(C)
-        newlinks=[(endseg[r[1]],startseg[r[2]]) for r in eachrow([1:(n+m) S[1]]) if all(r.<=(m,n))]
+        S=solve_stiff_lap(C)
+        newlinks=[(endseg[a],startseg[b]) for (a,b) in S if (0<a<=m && 0<b<=n)]
         config.verbose && println("Started GAP closing: ", length(newlinks)," gaps identified")
         linktr=Vector{Int}[]
         forbidden=Set{Int}()

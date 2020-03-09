@@ -13,7 +13,7 @@ function synthframe(t::Int,N::Int,ndims::Int)
 end
 function TEST(ndims)
     M=[[1, -1, 1, -1, 1], [1, 1, 2, 1, 2], [1, 2, 3, 2, 3], [1, 3, 4, 3, 4], [1, 4, 5, 4, -1]]
-    specs = SPT(maxtimegap=10,maxdist=10,dims=ndims)
+    specs = SPT(maxtimegap=10,maxdist=10,dims=ndims,verbose=false)
     frames=[
             synthframe(10,5,ndims)[:,2:end],
             synthframe(11,5,ndims),
