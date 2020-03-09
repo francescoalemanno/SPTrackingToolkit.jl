@@ -5,8 +5,8 @@ version = "0.2.0"
 
 [deps]
 DefaultArrays = "bb1859e0-6c46-48fc-af17-5b269a75ae2f"
+LapSolve = "f5028efd-149e-4269-ab9a-65f8f0583d22"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
-SolveLAP = "f5028efd-149e-4269-ab9a-65f8f0583d22"
 
 [extras]
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"

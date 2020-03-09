@@ -1,6 +1,6 @@
 module SPTrackingToolkit
     using DefaultArrays
-    using SolveLAP
+    using LapSolve
     using LinearAlgebra
     export track
     export SPT
