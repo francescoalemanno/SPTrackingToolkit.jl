@@ -24,51 +24,27 @@ module SPTrackingToolkit
     function segments(config::SPT,Ma,Mb)
         pa=size(Ma,2)
         pb=size(Mb,2)
-        C=DefaultArray(Inf,pa+pb,pa+pb)
-        mincost=Inf
-        maxcost=0.0
+        C=DefaultArray(Inf,pa,pb)
 
         for i in 1:pa, j in 1:pb
             cost=norm(Ma[config.X,i] .- Mb[config.X,j])
             cost <= config.maxdist || continue
             C[i,j] = cost
-            mincost=min(cost,mincost)
-            maxcost=max(cost,maxcost)
         end
 
-        for i in (pa+1):(pa+pb), j in (pb+1):(pa+pb)
-            iT=j-pb
-            jT=i-pa
-            if C[iT,jT] != C.default
-                C[i,j]=mincost
-            end
+        S=solve_stiff_lap(C,1.05)
+        solution=zeros(Int,length(S),3)
+
+        for i in eachindex(S)
+            ia, ib = S[i]
+            solution[i,1]=ia
+            solution[i,2]=ib
+            solution[i,3]=COMPLETEMARK
+            ia<0 && (solution[i,3]=STARTMARK)
+            ib<0 && (solution[i,3]=ENDMARK)
+            (ia<0 && ib<0) && (solution[i,3]=FAKEMARK)
         end
-        for i in (pb+1):(pa+pb)
-            C[i-pb,i]=maxcost*1.05
-        end
-        for i in (pa+1):(pa+pb)
-            C[i,i-pa]=maxcost*1.05
-        end
-        solution=[1:(pa+pb) solve_lap(C)[1] zeros(Int,pa+pb)]
-        for i in 1:(pa+pb)
-            ia,ib,_=solution[i,:]
-            if ia<=pa && ib<=pb
-                solution[i,3]=COMPLETEMARK
-            end
-            if ia<=pa && ib>pb
-                solution[i,3]=ENDMARK
-                solution[i,2]=MISSINGFRAME
-            end
-            if ia>pa && ib<=pb
-                solution[i,3]=STARTMARK
-                solution[i,1]=MISSINGFRAME
-            end
-            if ia>pa && ib>pb
-                solution[i,3]=FAKEMARK
-                solution[i,2]=FAKEMARK
-                solution[i,1]=FAKEMARK
-            end
-        end
+
         solution
     end
     @inline function tC(v::Vector)
@@ -103,10 +79,7 @@ module SPTrackingToolkit
 
         n=length(startseg)
         m=length(endseg)
-        C=DefaultArray(Inf,m+n,m+n)
-        maxG=0.0
-        minG=Inf
-
+        C=DefaultArray(Inf,m,n)
         for i in 1:m, j in 1:n  ## GAP filling block
             ti=endseg[i]
             tj=startseg[j]
@@ -126,23 +99,7 @@ module SPTrackingToolkit
                 cost=norm(pend.-pstart)/sqrt(Δt+1)
                 cost <= config.maxdist || continue
                 C[i,j] = cost
-                maxG=max(maxG,C[i,j])
-                minG=min(minG,C[i,j])
             end
-        end
-
-        for i in 1:m, j in 1:n  ## auxiliary block
-            if isinf(C[i,j])
-               continue
-            end
-            C[j+m,i+n]=minG
-        end
-
-        for i in 1:n  ## no GAP filling block
-            C[i+m,i]=maxG*1.05
-        end
-        for i in 1:m  ## no GAP filling block
-            C[i,i+n]=maxG*1.05
         end
         return C
     end
@@ -153,9 +110,9 @@ module SPTrackingToolkit
         endseg=findall(x->x[end]==MISSINGFRAME,tracks)
         n=length(startseg)
         m=length(endseg)
-        C= buildcost_closegaps(config::SPT,frames,tracks)
-        S=solve_lap(C)
-        newlinks=[(endseg[r[1]],startseg[r[2]]) for r in eachrow([1:(n+m) S[1]]) if all(r.<=(m,n))]
+        C=buildcost_closegaps(config::SPT,frames,tracks)
+        S=solve_stiff_lap(C)
+        newlinks=[(endseg[a],startseg[b]) for (a,b) in S if (0<a<=m && 0<b<=n)]
         config.verbose && println("Started GAP closing: ", length(newlinks)," gaps identified")
         linktr=Vector{Int}[]
         forbidden=Set{Int}()
