@@ -86,9 +86,7 @@ module SPTrackingToolkit
 
         n=length(startseg)
         m=length(endseg)
-        C=DefaultArray(Inf,m+n,m+n)
-        maxG=0.0
-        minG=Inf
+        C=DefaultArray(Inf,m,n)
         for i in 1:m, j in 1:n  ## GAP filling block
             ti=endseg[i]
             tj=startseg[j]
@@ -108,25 +106,9 @@ module SPTrackingToolkit
                 cost=norm(pend.-pstart)/sqrt(Δt+1)
                 cost <= config.maxdist || continue
                 C[i,j] = cost
-                maxG=max(maxG,C[i,j])
-                minG=min(minG,C[i,j])
             end
         end
-
-        for i in 1:m, j in 1:n  ## auxiliary block
-            if isinf(C[i,j])
-               continue
-            end
-            C[j+m,i+n]=minG
-        end
-
-        for i in 1:n  ## no GAP filling block
-            C[i+m,i]=maxG*1.05
-        end
-        for i in 1:m  ## no GAP filling block
-            C[i,i+n]=maxG*1.05
-        end
-        return C
+        return StiffWrapper(C,1.05)
     end
     function closegaps(config::SPT,frames,origtracks)
         tracks=origtracks
@@ -135,7 +117,7 @@ module SPTrackingToolkit
         endseg=findall(x->x[end]==MISSINGFRAME,tracks)
         n=length(startseg)
         m=length(endseg)
-        C= buildcost_closegaps(config::SPT,frames,tracks)
+        C=buildcost_closegaps(config::SPT,frames,tracks)
         S=solve_lap(C)
         newlinks=[(endseg[r[1]],startseg[r[2]]) for r in eachrow([1:(n+m) S[1]]) if all(r.<=(m,n))]
         config.verbose && println("Started GAP closing: ", length(newlinks)," gaps identified")
