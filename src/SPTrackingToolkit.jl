@@ -114,7 +114,8 @@ function closegaps(config::SPT,frames,origtracks)
     endseg=findall(x->x[end]==MISSINGFRAME,tracks)
     n=length(startseg)
     m=length(endseg)
-    C=buildcost_closegaps(config::SPT,frames,tracks)
+    m==0 && n==0 && return origtracks
+    C=buildcost_closegaps(config,frames,tracks)
     S=solve_stiff_lap(C)
     newlinks=[(endseg[a],startseg[b]) for (a,b) in S if (0<a<=m && 0<b<=n)]
     config.verbose && println("Started GAP closing: ", length(newlinks)," gaps identified")
